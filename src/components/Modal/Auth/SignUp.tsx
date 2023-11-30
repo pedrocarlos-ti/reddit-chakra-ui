@@ -1,6 +1,9 @@
+import { auth } from "@/firebase/app";
+import { FIREBASE_ERRORS } from "@/firebase/errors";
 import { AuthModalState } from "@/state/authModalAtom";
 import { Button, Flex, Input, Text } from "@chakra-ui/react";
 import { useState } from "react";
+import { useCreateUserWithEmailAndPassword } from "react-firebase-hooks/auth";
 import { useSetRecoilState } from "recoil";
 
 type Props = {};
@@ -10,11 +13,23 @@ const SignUp = (props: Props) => {
   const [signUpForm, setSignUpForm] = useState({
     email: "",
     password: "",
+    confirmPassword: "",
   });
+  const [errorText, setErrorText] = useState("");
+
+  const [createUserWithEmailAndPassword, user, loading, error] =
+    useCreateUserWithEmailAndPassword(auth);
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log(signUpForm);
+    if (errorText) setErrorText("");
+
+    if (signUpForm.password !== signUpForm.confirmPassword) {
+      setErrorText("Password does not match");
+      return;
+    }
+
+    createUserWithEmailAndPassword(signUpForm.email, signUpForm.password);
   };
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,9 +104,15 @@ const SignUp = (props: Props) => {
           borderColor: "blue.500",
         }}
       />
-      <Button width="100%" mt={2} mb={4} type="submit">
-        Log In
+
+      <Button isLoading={loading} width="100%" mt={2} mb={4} type="submit">
+        Sign Up
       </Button>
+
+      <Text color="red.500" fontSize="9pt" mb={2} textAlign="center">
+        {errorText ||
+          FIREBASE_ERRORS[error?.code as keyof typeof FIREBASE_ERRORS]}
+      </Text>
 
       <Flex fontSize="9pt" justify="center" gap={2}>
         <Text>Already a redditor?</Text>
